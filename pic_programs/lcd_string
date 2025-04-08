@@ -1,0 +1,82 @@
+// PIC16F877A Configuration Bit Settings
+
+// 'C' source line config statements
+
+// CONFIG - Configuration bits for setting up the microcontroller behavior
+#pragma config FOSC = EXTRC     // Oscillator selection: External RC oscillator
+#pragma config WDTE = OFF       // Watchdog Timer disabled
+#pragma config PWRTE = OFF      // Power-up Timer disabled
+#pragma config BOREN = OFF      // Brown-out Reset disabled
+#pragma config LVP = OFF        // Low Voltage Programming disabled
+#pragma config CPD = OFF        // Data EEPROM code protection off
+#pragma config WRT = OFF        // Flash Program Memory write protection off
+#pragma config CP = OFF         // Flash Program Memory code protection off
+
+// Header file for PIC microcontroller
+#include <xc.h>
+
+// Defining the crystal frequency for delay functions
+#define _XTAL_FREQ  6000000
+
+// Function declarations
+void init();                    // LCD and port initialization function
+void lcd_cmd(unsigned char);    // Function to send command to LCD
+void lcd_data(unsigned char);   // Function to send data/character to LCD
+
+unsigned char x, cmd, data;                      // variables declerations
+unsigned char str[12] = {"HELLO WORLD"};         // String to display on LCD
+
+// Main function starts
+void main(void) {
+    init();                     // Call initialization function
+    lcd_cmd(0x83);              // Move cursor to 1st row, 4th position (0x80 + 3)
+    for(x = 0; x < 11; x++)     // Loop through each character in the string
+    {
+        lcd_data(str[x]);       // Send each character to the LCD
+    }
+    while(1);                   // Infinite loop to keep program running
+    return;                     // Return from main (optional in embedded)
+}
+
+// Function to initialize ports and LCD
+void init()
+{
+    TRISC = 0x00;               // Set all Port C pins as output
+    TRISD = 0x00;               // Set all Port D pins as output (used for data)
+    lcd_cmd(0x38);              // 2-line LCD, 5x7 matrix
+    __delay_ms(100);            // Delay for LCD processing
+    lcd_cmd(0x38);              // Repeat command to ensure LCD configuration
+    __delay_ms(100);
+     lcd_cmd(0x38);              // Repeat again
+    __delay_ms(100);
+    lcd_cmd(0x38);              // One more repeat
+    __delay_ms(100);
+     lcd_cmd(0x06);              // Entry mode set: cursor moves to right
+    __delay_ms(100);
+    lcd_cmd(0x0C);              // Display ON, cursor OFF
+    __delay_ms(100);
+    lcd_cmd(0x01);              // Clear LCD display
+    __delay_ms(100);
+}
+
+// Function to send command to LCD
+void lcd_cmd(unsigned char cmd)
+{
+   PORTC &= ~0x08;              // RS = 0 (command mode), RC3
+   PORTD = cmd;                 // Put command on data bus (PORTD)
+   PORTC |= 0x01;               // EN = 1, RC0 (Enable pulse start)
+   __delay_ms(100);             // Delay for LCD to latch command
+   PORTC &= ~0x01;              // EN = 0, RC0 (Enable pulse end)
+   __delay_ms(100);             // Small delay
+}
+
+// Function to send data to LCD
+void lcd_data(unsigned char data)
+{
+    PORTC |= 0x08;              // RS = 1 (data mode), RC3
+    PORTD = data;               // Put data on data bus (PORTD)
+    PORTC |= 0x01;              // EN = 1, RC0 (Enable pulse start)
+    __delay_ms(100);            // Delay for LCD to latch data
+    PORTC &= ~0x01;             // EN = 0, RC0 (Enable pulse end)
+    __delay_ms(100);            // Small delay
+}
